@@ -1,40 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Upload Report</title>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
+  </head>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Upload Report</title>
-  <script src="{{ url_for('static', filename='main.js') }}"></script>
-</head>
+  <body data-report-ready="{{ session.get('report_ready')|tojson }}">
+    <div class="spinner" id="spinner"></div>
 
-<body data-report-ready="{{ session.get('report_ready')|tojson }}">
-  <div class="spinner" id="spinner"></div>
+    <h2>Analyze Raw or Condensed Data</h2>
+    <form action="{{ url_for('main.get_files_from_folder') }}" method="get">
+      <button type="submit">File list</button>
+    </form>
+    <form action="{{ url_for('main.run_folder_batch') }}" method="post">
+      <button type="submit">Upload files from local folder</button>
+    </form>
 
-
-  {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}
-      <ul class="flashes">
-        {% for cat, msg in msgs %}
-          <li class="{{ cat }}">{{ msg }}</li>
-        {% endfor %}
-      </ul>
-    {% endif %}
-  {% endwith %}
-
-  <h2>Analyze Raw or Condensed Data</h2>
-
-
-  <form action="{{ url_for('main.run_folder_batch') }}" method="post">
-    <button type="submit">Upload files from local folder</button>
-  </form>
-
-  <form action="{{ url_for('main.get_files_from_folder') }}" method="get">
-    <button type="submit">File list</button>
-  </form>
-
-  <button id="auto-save-sred">Auto save to sred</button>
-
-</body>
-
+    {% with msgs = get_flashed_messages(with_categories=true) %} {% if msgs %}
+    <div class="flashes">
+      {% for cat, msg in msgs %}
+      <h4 class="{{ cat }}">{{ msg }}</h4>
+      {% endfor %}
+    </div>
+    {% endif %} {% endwith %}
+  </body>
 </html>
