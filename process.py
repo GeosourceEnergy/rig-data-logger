@@ -1,7 +1,8 @@
 import pandas as pd
 
+
 def file_formatted(file):
-    headers = ["Time","Crane Tilt Up", "Crane Tilt Down", "Crane Clamp Close", "Crane Clamp Open", "Rod Clamp Open", "Rod Clamp Close",
+    headers = ["Time", "Crane Tilt Up", "Crane Tilt Down", "Crane Clamp Close", "Crane Clamp Open", "Rod Clamp Open", "Rod Clamp Close",
                "Casing Clamp Close", "Casing Clamp Open", "Start-up", "Switch Aux. 2", "Switch Feeder Guide Open", "Switch Feeder Guide Close",
                "Switch Breakout 1 IN raw value", "Switch Breakout 1 OUT raw value", "Switch Breakout 4 IN raw value", "Switch Breakout 4 OUT raw value",
                "Switch Override Feed", "Switch Threading Mode", "Switch Esp Rotary IN", "Switch Esp Rotary OUT", "Switch Fine Feed", "Switch Aux. 1",
@@ -17,19 +18,28 @@ def file_formatted(file):
                "RPM Turtle Mode", "RPM Rabbit Mode", "RPM Auto Mode", "Functions Enable", "Functions Disable", "Low Fuel Level", "Button Raise RPM",
                "Button Lower RPM", "Fuel Level (%)", "Rotation 1 Speed List", "Rotation 2 Speed List", "Drill Footage (ft)", "Hole Length (ft)"]
 
-
     df = pd.read_csv(file, delimiter=';', header=None)
-    
+
     original_cols = df.shape[1]
     expected_cols = len(headers)
 
-    # 3) Normalize column count
+    # 3) Normalize column count (handle trailing/extra semicolons)
     if original_cols > expected_cols:
         # Too many columns in file → keep first N
         df = df.iloc[:, :expected_cols]
+    elif original_cols < expected_cols:
+        # Too few columns → pad with empty columns so we still match headers
+        for i in range(expected_cols - original_cols):
+            df[f"_extra_{i}"] = pd.NA
 
     df.columns = headers
     df.insert(1, 'Date', '')
-    df['Date'] = pd.to_datetime(df['Time'], errors='coerce').dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+
+    df['Date'] = (
+        pd.to_datetime(df['Time'], utc=True, errors='coerce')
+        .dt.tz_convert(None)                    # drop timezone info
+        .sub(pd.Timedelta(hours=4))             # ⬅ shift 4 hours backward
+        .dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')  # re-format ISO
+    )
     df.to_csv(file, sep=',', index=False, encoding='utf-8')
     return df

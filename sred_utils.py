@@ -46,6 +46,8 @@ def save_to_sred(files, rig=360):
             date_str = p.stem
 
     # Extract filename which contains the date
+            if ('_uploaded' in p.name):
+                continue
             date = datetime.strptime(date_str, '%Y%m%d')
             date_formatted = date.strftime('%Y-%m-%d')
             ext = p.suffix.lower()
