@@ -1,7 +1,6 @@
 import os
 import gc
-import time
-import subprocess
+from datetime import datetime
 
 from office365.runtime.auth.client_credential import ClientCredential
 from office365.sharepoint.client_context import ClientContext
@@ -12,45 +11,17 @@ from config import (
 )
 
 from pathlib import Path
+from process import file_formatted
 
 
-def get_files_from_folder():
-    folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\rig_test_folder"
-    # folder_path = r"/home/admin/Downloads/rig_test_folder"
-    # folder_path = "/media/username/BEA6-BBCE1/usb_share"
-    mount_path = r"/home/username/Desktop/mountdrive.sh"
-    mount_execute = subprocess.run(["bash", mount_path], capture_output=True, text=True)
-    if mount_execute.returncode != 0:
-        raise Exception(f"Failed to mount drive: {mount_execute.stderr}")
-    folder = Path(folder_path).expanduser().resolve()
-    if not folder.exists():
-        raise FileNotFoundError(f"Folder {folder} does not exist")
-    if not folder.is_dir():
-        raise NotADirectoryError(f"Folder {folder} is not a directory")
-    # Update to files that are being uploaded, this should be all based on Amanda's messages
-    allowed_ext = {".csv", ".xlsx", ".xls"}
-    uploaded = []
-
-    for file in folder.iterdir():
-        if file.is_file() and file.suffix.lower() in allowed_ext:
-            uploaded.append(file)
-    print(uploaded)  # for debugging in console
-    # return jsonify([str(f) for f in uploaded])
-    return uploaded
-
-# Function to save files to SharePoint, not automated for 7pm yet
-
-
-def save_to_sred(files):
-    """
+def save_to_sred(files, rig=360):
+    '''
     Upload exactly the file the user uploaded to SharePoint.
     - CSV -> Data/{rig}/
     - Others -> Reports/{rig}/
-    """
+    '''
+    print(f"Saving files to SharePoint for rig {rig}")
 
-    rig = "360"  # figure out a way to get rig number from session, wait to get file name first
-    # figure out a way to get date from session, wait to get file name first
-    date = "10_15_2028"
     # Authenticating with Sharepoint site using app credentials
     ctx = ClientContext(SP_SITE_URL).with_credentials(
         ClientCredential(SP_CLIENT_ID, SP_CLIENT_SECRET)
@@ -61,50 +32,58 @@ def save_to_sred(files):
         f"{SP_DOC_LIBRARY}/Reports/{rig}"
     )
 
-    unmount_path = r"/home/username/Desktop/unmountdrive.sh"
-
     # Load existing files in the folder
     ctx.load(folder, ["Files"]).execute_query()
 
     # Stores existing filenames
-    existing = {f.properties["Name"] for f in folder.files}
+    # existing = {f.properties["Name"] for f in folder.files}
 
     # Iterate through files and upload to SharePoint
     for file in files:
         try:
-            t_file = time.perf_counter()  # Start timing for file processing
-            # Convert file to Path object if it's not already
             p = file if isinstance(file, Path) else Path(file)
             filename = p.name
-            ext = p.suffix.lower()  # file type
+            date_str = p.stem
+
+    # Extract filename which contains the date
+            date = datetime.strptime(date_str, '%Y%m%d')
+            date_formatted = date.strftime('%Y-%m-%d')
+            ext = p.suffix.lower()
+    # Format CSV file for Geometrics
+            if (ext == ".csv"):
+                file = file_formatted(p)
+
+            new_name = f"CS500-Novamac_{rig}_{date_formatted}T{ext}"
+            with open(p, 'rb') as file_obj:
+                # Upload file to SharePoint
+                if ('_uploaded' not in p.name):
+                    folder.upload_file(new_name, file_obj).execute_query()
+                else:
+                    print(f"File {p.name} already uploaded to SharePoint")
+            print(f"File {new_name} uploaded to SharePoint successfully")
+
+            new_local_path = p.with_name(
+                f"{date_formatted}_uploaded{ext}")
+            if (new_local_path.exists()):
+                print(f"File {p.name} already uploaded to SharePoint")
+                continue
+            p.rename(new_local_path)
 
             # Preparing new file name, if file already exists, add a number to the end
-            new_name = filename
-            base, e = os.path.splitext(filename)
-            i = 1
+            # i = 1
             # Loop until name is unique in SharePoint folder
-            while new_name in existing:
-                new_name = f"{base} ({i}){e}"
-                i += 1
+            # while new_name in existing:
+            #     new_name = f"{new_name} ({i}){ext}"
+            #     i += 1
 
             # Read file bytes and upload
-            t_read = time.perf_counter()
-            data = file.read_bytes()  # bytes
-            # Log size instead of raw bytes to prevent console overload
+            # data = file.read_bytes()  # Changed this method to streaming version below since files are large and we don't want to load all into memory
 
-            # Upload file to SharePoint
-            folder.upload_file(new_name, data).execute_query()
-            del data
-            gc.collect()  # Force garbage collection after large file uploads (optional safeguard)
+            # Removed since we are not holding the files in memory
+            # del data
+            # gc.collect()  # Force garbage collection after large file uploads (optional safeguard)
 
         except Exception as e:
             print(f"Error saving to SR&ED: {e}")
-    unmount_execute = subprocess.run(["bash", unmount_path], capture_output=True, text=True)
-    if unmount_execute.returncode != 0:
-        raise Exception(f"Failed to unmount drive: {unmount_execute.stderr}")
 
-
-def run_auto_save_sred():
-    files = get_files_from_folder()
-    save_to_sred(files)
-    return
+    print("File upload to sharepoint complete")
