@@ -23,14 +23,10 @@ def file_formatted(file):
     original_cols = df.shape[1]
     expected_cols = len(headers)
 
-    # 3) Normalize column count (handle trailing/extra semicolons)
+    # 3) Normalize column count
     if original_cols > expected_cols:
         # Too many columns in file → keep first N
         df = df.iloc[:, :expected_cols]
-    elif original_cols < expected_cols:
-        # Too few columns → pad with empty columns so we still match headers
-        for i in range(expected_cols - original_cols):
-            df[f"_extra_{i}"] = pd.NA
 
     df.columns = headers
     df.insert(1, 'Date', '')
