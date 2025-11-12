@@ -1,6 +1,6 @@
 import os
 import gc
-from datetime import datetime
+from datetime import datetime, timedelta,date
 
 from office365.runtime.auth.client_credential import ClientCredential
 from office365.sharepoint.client_context import ClientContext
@@ -14,11 +14,21 @@ from pathlib import Path
 from process import file_formatted
 
 
+def delete_local_file(file):
+    todayDate = datetime.now().strftime('%Y-%m-%d')
+    file_date = file.name.split('_')[0]
+    todayDate = datetime.strptime(todayDate, '%Y-%m-%d')
+    file_date = datetime.strptime(file_date, '%Y-%m-%d')
+    if (todayDate - file_date).days > 30:
+        os.remove(file)
+        print(f"File {file} deleted successfully")
+    print(f"Done deleting files older than 30 days")
+
+
 def save_to_sred(files, rig=360):
     '''
     Upload exactly the file the user uploaded to SharePoint.
-    - CSV -> Data/{rig}/
-    - Others -> Reports/{rig}/
+    -> Reports/{rig}/
     '''
     print(f"Saving files to SharePoint for rig {rig}")
 
@@ -40,17 +50,18 @@ def save_to_sred(files, rig=360):
 
     # Iterate through files and upload to SharePoint
     for file in files:
+        p = file if isinstance(file, Path) else Path(file)
         try:
-            p = file if isinstance(file, Path) else Path(file)
-            filename = p.name
+            if ('_uploaded' in p.name):
+                delete_local_file(p)
+                continue
             date_str = p.stem
 
     # Extract filename which contains the date
-            if ('_uploaded' in p.name):
-                continue
             date = datetime.strptime(date_str, '%Y%m%d')
             date_formatted = date.strftime('%Y-%m-%d')
             ext = p.suffix.lower()
+
     # Format CSV file for Geometrics
             if (ext == ".csv"):
                 file = file_formatted(p)
@@ -66,24 +77,11 @@ def save_to_sred(files, rig=360):
 
             new_local_path = p.with_name(
                 f"{date_formatted}_uploaded{ext}")
+
             if (new_local_path.exists()):
                 print(f"File {p.name} already uploaded to SharePoint")
                 continue
             p.rename(new_local_path)
-
-            # Preparing new file name, if file already exists, add a number to the end
-            # i = 1
-            # Loop until name is unique in SharePoint folder
-            # while new_name in existing:
-            #     new_name = f"{new_name} ({i}){ext}"
-            #     i += 1
-
-            # Read file bytes and upload
-            # data = file.read_bytes()  # Changed this method to streaming version below since files are large and we don't want to load all into memory
-
-            # Removed since we are not holding the files in memory
-            # del data
-            # gc.collect()  # Force garbage collection after large file uploads (optional safeguard)
 
         except Exception as e:
             print(f"Error saving to SR&ED: {e}")
