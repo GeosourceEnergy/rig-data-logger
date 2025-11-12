@@ -1,6 +1,7 @@
 import os
 import gc
-from datetime import datetime, timedelta,date
+from datetime import datetime
+import time
 
 from office365.runtime.auth.client_credential import ClientCredential
 from office365.sharepoint.client_context import ClientContext
@@ -24,6 +25,22 @@ def delete_local_file(file):
         print(f"File {file} deleted successfully")
     print(f"Done deleting files older than 30 days")
 
+def safe_upload_file(file, folder,new_name, max_retries=3, retry_delay=5):
+    for attempt in range(max_retries):
+        try:
+            with open(file, 'rb') as file_obj:
+                folder.upload_file(new_name, file_obj).execute_query()
+            print(f"File {new_name} uploaded to SharePoint successfully")
+            return True
+        except Exception as e:
+            print(f"Error uploading file {file}: {e}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay * attempt)
+            else:
+                raise e
+    return False
+
+
 
 def save_to_sred(files, rig=360):
     '''
@@ -45,8 +62,6 @@ def save_to_sred(files, rig=360):
     # Load existing files in the folder
     ctx.load(folder, ["Files"]).execute_query()
 
-    # Stores existing filenames
-    # existing = {f.properties["Name"] for f in folder.files}
 
     # Iterate through files and upload to SharePoint
     for file in files:
@@ -54,26 +69,30 @@ def save_to_sred(files, rig=360):
         try:
             if ('_uploaded' in p.name):
                 delete_local_file(p)
+                print(f"File {p.name} already uploaded to SharePoint")
                 continue
             date_str = p.stem
 
-    # Extract filename which contains the date
+            # Extract filename which contains the date
             date = datetime.strptime(date_str, '%Y%m%d')
             date_formatted = date.strftime('%Y-%m-%d')
             ext = p.suffix.lower()
 
-    # Format CSV file for Geometrics
+            # Format CSV file for Geometrics
             if (ext == ".csv"):
                 file = file_formatted(p)
+            else:
+                print(f"File {p.name} is not a CSV file")
 
+            # rename file to follow Danfoss convention for Geometrics processing
             new_name = f"CS500-Novamac_{rig}_{date_formatted}T{ext}"
-            with open(p, 'rb') as file_obj:
-                # Upload file to SharePoint
-                if ('_uploaded' not in p.name):
-                    folder.upload_file(new_name, file_obj).execute_query()
-                else:
-                    print(f"File {p.name} already uploaded to SharePoint")
-            print(f"File {new_name} uploaded to SharePoint successfully")
+
+            # Upload file to SharePoint if it hasn't been uploaded yet, use safe_upload_file function to handle retries
+            attempt = safe_upload_file(p, folder, new_name)
+            if (attempt):
+                print(f"File {new_name} uploaded to SharePoint successfully")
+            else:
+                print(f"File {new_name} failed to upload to SharePoint")
 
             new_local_path = p.with_name(
                 f"{date_formatted}_uploaded{ext}")
