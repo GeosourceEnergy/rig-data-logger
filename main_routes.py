@@ -5,7 +5,7 @@ from flask import (
     url_for, flash,
     Blueprint, render_template,
 )
-
+from flask import jsonify
 
 
 from pathlib import Path
@@ -37,7 +37,8 @@ def get_files_from_folder():
             uploaded.append(file)
 
     print(uploaded)  # for debugging in console
-    return uploaded
+    # return jsonify([str(f) for f in uploaded]) # uncomment if you want to return the file objects in Flask using file list button
+    return (uploaded)
 
 
 @main_bp.route('/save_report_sred', methods=['POST'])
