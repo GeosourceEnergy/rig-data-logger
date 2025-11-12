@@ -40,6 +40,7 @@ def unmount_drive():
     if unmount_execute.returncode != 0:
         raise Exception(f"Failed to unmount drive: {unmount_execute.stderr}")
 
+
 if __name__ == "__main__":
     # mount_drive() # removed if not on raspberry pi
     files = get_files_from_folder()
