@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 from sred_utils import save_to_sred
+from flask import jsonify
 
 
 def get_files_from_folder():
@@ -23,7 +24,7 @@ def get_files_from_folder():
         if file.is_file() and file.suffix.lower() in allowed_ext:
             uploaded.append(file)
 
-    print(uploaded)  # for debugging in console
+    # print(uploaded)
     return uploaded
 
 
