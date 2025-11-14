@@ -9,7 +9,7 @@ def get_files_from_folder():
     # File path for raspberry pi
     # folder_path = r"/home/admin/Downloads/rig_test_folder"
     # folder_path = "/media/username/BEA6-BBCE1/usb_share"
- 
+
     folder = Path(folder_path).expanduser().resolve()
     if not folder.exists():
         raise FileNotFoundError(f"Folder {folder} does not exist")
@@ -22,21 +22,26 @@ def get_files_from_folder():
     for file in folder.iterdir():
         if file.is_file() and file.suffix.lower() in allowed_ext:
             uploaded.append(file)
-            
+
     print(uploaded)  # for debugging in console
     return uploaded
+
 
 def mount_drive():
     # Mount drive script path ONLY for raspberry pi
     mount_path = r"/home/username/Desktop/mountdrive.sh"
-    mount_execute = subprocess.run(["bash", mount_path], capture_output=True, text=True)
+    mount_execute = subprocess.run(
+        ["bash", mount_path], capture_output=True, text=True)
     if mount_execute.returncode != 0:
         raise Exception(f"Failed to mount drive: {mount_execute.stderr}")
     print("successfully mounted drive")
 
+
 def unmount_drive():
+    # Unmount drive script path ONLY for raspberry pi
     unmount_path = r"/home/username/Desktop/unmountdrive.sh"
-    unmount_execute = subprocess.run(["bash", unmount_path], capture_output=True, text=True)
+    unmount_execute = subprocess.run(
+        ["bash", unmount_path], capture_output=True, text=True)
     if unmount_execute.returncode != 0:
         raise Exception(f"Failed to unmount drive: {unmount_execute.stderr}")
 

@@ -25,7 +25,8 @@ def delete_local_file(file):
         print(f"File {file} deleted successfully")
     print(f"Done deleting files older than 30 days")
 
-def safe_upload_file(file, folder,new_name, max_retries=3, retry_delay=5):
+
+def safe_upload_file(file, folder, new_name, max_retries=3, retry_delay=5):
     for attempt in range(max_retries):
         try:
             with open(file, 'rb') as file_obj:
@@ -39,7 +40,6 @@ def safe_upload_file(file, folder,new_name, max_retries=3, retry_delay=5):
             else:
                 raise e
     return False
-
 
 
 def save_to_sred(files, rig=360):
@@ -61,7 +61,6 @@ def save_to_sred(files, rig=360):
 
     # Load existing files in the folder
     ctx.load(folder, ["Files"]).execute_query()
-
 
     # Iterate through files and upload to SharePoint
     for file in files:
