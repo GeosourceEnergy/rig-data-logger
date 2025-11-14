@@ -1,4 +1,5 @@
 import pandas as pd
+from pathlib import Path
 
 
 def file_formatted(file):
@@ -19,6 +20,14 @@ def file_formatted(file):
                "Button Lower RPM", "Fuel Level (%)", "Rotation 1 Speed List", "Rotation 2 Speed List", "Drill Footage (ft)", "Hole Length (ft)"]
 
     df = pd.read_csv(file, delimiter=';', header=None)
+    file = Path(file)
+
+    #folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\files_formatted" # for local testing
+    folder_path = r"/home/username/Desktop/files_formatted" # for raspberry pi
+
+    output_path = Path(folder_path) 
+    output_path.mkdir(parents=True, exist_ok=True)
+    file_formatted = output_path/f"{file.stem}_formatted{file.suffix}"
 
     original_cols = df.shape[1]
     expected_cols = len(headers)
@@ -41,5 +50,5 @@ def file_formatted(file):
         .sub(pd.Timedelta(hours=4))             # ⬅ shift 4 hours backward
         .dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')  # re-format ISO
     )
-    df.to_csv(file, sep=',', index=False, encoding='utf-8')
-    return df
+    df.to_csv(file_formatted, sep=',', index=False, encoding='utf-8')
+    return file_formatted
