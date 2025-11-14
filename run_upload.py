@@ -8,7 +8,7 @@ def get_files_from_folder():
 
     # File path for raspberry pi
     # folder_path = r"/home/admin/Downloads/rig_test_folder"
-    folder_path = "/media/username/BEA6-BBCE1/usb_share"
+    folder_path = r"/media/username/BEA6-BBCE1/usb_share"
 
     folder = Path(folder_path).expanduser().resolve()
     if not folder.exists():
@@ -44,6 +44,7 @@ def unmount_drive():
         ["bash", unmount_path], capture_output=True, text=True)
     if unmount_execute.returncode != 0:
         raise Exception(f"Failed to unmount drive: {unmount_execute.stderr}")
+    print("successfully unmounted drive") # for debugging in console
 
 
 if __name__ == "__main__":
