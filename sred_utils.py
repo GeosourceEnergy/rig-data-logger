@@ -89,14 +89,15 @@ def save_to_sred(files, rig=360):
             # Upload file to SharePoint if it hasn't been uploaded yet, use safe_upload_file function to handle retries
             attempt = safe_upload_file(p, folder, new_name)
             if (attempt):
+                new_local_path = p.with_name(
+                    f"{date_formatted}_uploaded{ext}")
                 print(f"File {new_name} uploaded to SharePoint successfully")
             else:
                 print(f"File {new_name} failed to upload to SharePoint")
 
-            new_local_path = p.with_name(
-                f"{date_formatted}_uploaded{ext}")
+            if (new_local_path.exists(
 
-            if (new_local_path.exists()):
+            )):
                 print(f"File {p.name} already uploaded to SharePoint")
                 continue
             p.rename(new_local_path)
