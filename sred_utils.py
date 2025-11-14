@@ -25,6 +25,21 @@ def delete_local_file(file):
         print(f"File {file} deleted successfully")
     print(f"Done deleting files older than 30 days")
 
+def delete_formatted_files():
+    # folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\files_formatted" # for local testing
+    folder_path = r"/home/username/Desktop/files_formatted" # for raspberry pi
+
+    today_date = datetime.strptime(datetime.now().strftime('%Y%m%d'), '%Y%m%d')
+    folder = Path(folder_path)
+    if not folder.exists():
+        raise FileNotFoundError(f"Folder {folder} does not exist")
+    for file in folder.iterdir():
+        file_date = datetime.strptime(file.stem.split('_')[0], '%Y%m%d')
+        if ("_formatted" in file.stem and (today_date - file_date).days > 30):
+            os.remove(file)
+            print(f"File {file} deleted successfully")
+    print(f"Done deleting files older than 30 days")
+
 
 def safe_upload_file(file, folder, new_name, max_retries=3, retry_delay=5):
     for attempt in range(max_retries):
@@ -62,14 +77,16 @@ def save_to_sred(files, rig=360):
     # Load existing files in the folder
     ctx.load(folder, ["Files"]).execute_query()
 
+    # keep only csv files
+
     # Iterate through files and upload to SharePoint
     for file in files:
         p = file if isinstance(file, Path) else Path(file)
         try:
-            if ('_uploaded' in p.name):
-                delete_local_file(p)
-                print(f"File {p.name} already uploaded to SharePoint")
-                continue
+            # if ('_uploaded' in p.name):
+            #     delete_local_file(p)
+            #     print(f"File {p.name} already uploaded to SharePoint")
+            #     continue
             date_str = p.stem
 
             # Extract filename which contains the date
@@ -87,22 +104,25 @@ def save_to_sred(files, rig=360):
             new_name = f"CS500-Novamac_{rig}_{date_formatted}T{ext}"
 
             # Upload file to SharePoint if it hasn't been uploaded yet, use safe_upload_file function to handle retries
-            attempt = safe_upload_file(p, folder, new_name)
-            if (attempt):
-                new_local_path = p.with_name(
-                    f"{date_formatted}_uploaded{ext}")
-                print(f"File {new_name} uploaded to SharePoint successfully")
-            else:
-                print(f"File {new_name} failed to upload to SharePoint")
+            today_date = datetime.strptime(datetime.now().strftime('%Y%m%d'), '%Y%m%d')
+            if (today_date == date): # only upload files from today 
+                attempt = safe_upload_file(p, folder, new_name)
+                if (attempt):
+                    # new_local_path = p.with_name(
+                    #     f"{date_formatted}_uploaded{ext}")
+                    print(f"File {new_name} uploaded to SharePoint successfully")
+                else:
+                    print(f"File {new_name} failed to upload to SharePoint")
 
-            if (new_local_path.exists(
+            # if (new_local_path.exists(
 
-            )):
-                print(f"File {p.name} already uploaded to SharePoint")
-                continue
-            p.rename(new_local_path)
+            # )):
+            #     print(f"File {p.name} already uploaded to SharePoint")
+            #     continue
+            # p.rename(new_local_path)
 
         except Exception as e:
             print(f"Error saving to SR&ED: {e}")
+    delete_formatted_files()
 
     print("File upload to sharepoint complete")
