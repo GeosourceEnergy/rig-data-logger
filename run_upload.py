@@ -4,11 +4,11 @@ from sred_utils import save_to_sred
 
 
 def get_files_from_folder():
-    folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\rig_test_folder"
+    # folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\rig_test_folder"
 
     # File path for raspberry pi
     # folder_path = r"/home/admin/Downloads/rig_test_folder"
-    # folder_path = "/media/username/BEA6-BBCE1/usb_share"
+    folder_path = "/media/username/BEA6-BBCE1/usb_share"
 
     folder = Path(folder_path).expanduser().resolve()
     if not folder.exists():
@@ -47,7 +47,7 @@ def unmount_drive():
 
 
 if __name__ == "__main__":
-    # mount_drive() # removed if not on raspberry pi
+    mount_drive() # removed if not on raspberry pi
     files = get_files_from_folder()
     save_to_sred(files)
-    # unmount_drive() # removed if not on raspberry pi
+    unmount_drive() # removed if not on raspberry pi

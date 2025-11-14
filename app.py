@@ -20,7 +20,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 app.config['TEMPLATE_FILE'] = TEMPLATE_FILE_PATH
 app.config['ALLOWED_EXTENSIONS'] = ALLOWED_EXTENSIONS
 
-app.config['SESSION_TYPE'] = 'filesystem'  # or 'redis'
+app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
 
 app.register_blueprint(main_bp)
