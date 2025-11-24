@@ -14,17 +14,6 @@ from config import (
 from pathlib import Path
 from process import file_formatted
 
-
-def delete_local_file(file):
-    todayDate = datetime.now().strftime('%Y-%m-%d')
-    file_date = file.name.split('_')[0]
-    todayDate = datetime.strptime(todayDate, '%Y-%m-%d')
-    file_date = datetime.strptime(file_date, '%Y-%m-%d')
-    if (todayDate - file_date).days > 30:
-        os.remove(file)
-        print(f"File {file} deleted successfully")
-    print(f"Done deleting files older than 30 days")
-
 def delete_formatted_files():
     # folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\files_formatted" # for local testing
     folder_path = r"/home/username/Desktop/files_formatted" # for raspberry pi
@@ -83,10 +72,6 @@ def save_to_sred(files, rig=360):
     for file in files:
         p = file if isinstance(file, Path) else Path(file)
         try:
-            # if ('_uploaded' in p.name):
-            #     delete_local_file(p)
-            #     print(f"File {p.name} already uploaded to SharePoint")
-            #     continue
             date_str = p.stem
 
             # Extract filename which contains the date
@@ -105,21 +90,11 @@ def save_to_sred(files, rig=360):
 
             # Upload file to SharePoint if it hasn't been uploaded yet, use safe_upload_file function to handle retries
             today_date = datetime.strptime(datetime.now().strftime('%Y%m%d'), '%Y%m%d')
+            # if ("20251008" == date_str): # for local testing
             if (today_date == date): # only upload files from today 
-                attempt = safe_upload_file(p, folder, new_name)
+                attempt = safe_upload_file(file, folder, new_name)
                 if (attempt):
-                    # new_local_path = p.with_name(
-                    #     f"{date_formatted}_uploaded{ext}")
                     print(f"File {new_name} uploaded to SharePoint successfully")
-                else:
-                    print(f"File {new_name} failed to upload to SharePoint")
-
-            # if (new_local_path.exists(
-
-            # )):
-            #     print(f"File {p.name} already uploaded to SharePoint")
-            #     continue
-            # p.rename(new_local_path)
 
         except Exception as e:
             print(f"Error saving to SR&ED: {e}")
