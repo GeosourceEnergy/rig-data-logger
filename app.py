@@ -3,7 +3,7 @@ import logging
 import psutil
 from flask import Flask
 from main_routes import main_bp
-from config import SECRET_KEY, TEMPLATE_FILE_PATH, ALLOWED_EXTENSIONS
+from config import TEMPLATE_FILE_PATH
 from flask_session import Session
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
@@ -12,13 +12,11 @@ mb = psutil.Process(os.getpid()).memory_info().rss // (1024*1024)
 logging.info(f"[ColdStart] memory right after imports: {mb} MB")
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s",
                     handlers=[logging.FileHandler("application.log"), logging.StreamHandler()])
 
 app.config['TEMPLATE_FILE'] = TEMPLATE_FILE_PATH
-app.config['ALLOWED_EXTENSIONS'] = ALLOWED_EXTENSIONS
 
 app.config['SESSION_TYPE'] = 'filesystem'
 Session(app)
