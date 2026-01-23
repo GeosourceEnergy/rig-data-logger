@@ -5,7 +5,7 @@ set -e #exit on an error
 
 echo "Starting USB Mounting Script..."
 
-USERNAME="${USERNAME:-datalogger}"
+USERNAME="${USERNAME:-datalogger_364}"
 USB_DEVICE="${USB_DEVICE:-/dev/sda1}" #defaulting to bottom left USB port
 USB_ID="${USB_ID:-D4C1-015C}" #USB volume ID from lsblk -f
 

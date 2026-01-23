@@ -2,8 +2,8 @@
 
 set -e 
 
-USERNAME="${USERNAME:-datalogger}"
-USB_FOLDER_NAME="${USB_FOLDER_NAME:-usb_storage}"
+USERNAME="${USERNAME:-datalogger_364}"
+USB_ID="${USB_ID:-D4C1-015C}" #USB volume ID from lsblk -f
 USB_MOUNT="/media/$USERNAME/$USB_ID"
 
 echo "unmounting USB"
