@@ -4,7 +4,7 @@ set -e
 
 USERNAME="${USERNAME:-datalogger}"
 USB_FOLDER_NAME="${USB_FOLDER_NAME:-usb_storage}"
-USB_MOUNT="/media/$USERNAME/$USB_FOLDER_NAME"
+USB_MOUNT="/media/$USERNAME/$USB_ID"
 
 echo "unmounting USB"
 
