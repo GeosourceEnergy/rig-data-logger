@@ -13,13 +13,11 @@ from config import (
 
 from pathlib import Path
 from process import file_formatted
+from config import Config
 
 def delete_formatted_files():
-    # folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\files_formatted" # for local testing
-    folder_path = r"/home/username/Desktop/files_formatted" # for raspberry pi
-
     today_date = datetime.strptime(datetime.now().strftime('%Y%m%d'), '%Y%m%d')
-    folder = Path(folder_path)
+    folder = Path(Config.FORMATTED_DIR)
     if not folder.exists():
         raise FileNotFoundError(f"Folder {folder} does not exist")
     for file in folder.iterdir():
@@ -46,12 +44,12 @@ def safe_upload_file(file, folder, new_name, max_retries=3, retry_delay=5):
     return False
 
 
-def save_to_sred(files, rig=360):
+def save_to_sred(files):
     '''
     Upload exactly the file the user uploaded to SharePoint.
     -> Reports/{rig}/
     '''
-    print(f"Saving files to SharePoint for rig {rig}")
+    print(f"Saving files to SharePoint for rig {Config.rig}")
 
     # Authenticating with Sharepoint site using app credentials
     ctx = ClientContext(SP_SITE_URL).with_credentials(
@@ -60,7 +58,7 @@ def save_to_sred(files, rig=360):
 
     # Update folder and path in .env file after final file names are created
     folder = ctx.web.get_folder_by_server_relative_url(
-        f"{SP_DOC_LIBRARY}/Reports/{rig}"
+        f"{SP_DOC_LIBRARY}/Reports/{Config.rig}"
     )
 
     # Load existing files in the folder
@@ -86,7 +84,7 @@ def save_to_sred(files, rig=360):
                 print(f"File {p.name} is not a CSV file")
 
             # rename file to follow Danfoss convention for Geometrics processing
-            new_name = f"CS500-Novamac_{rig}_{date_formatted}T{ext}"
+            new_name = f"CS500-Novamac_{Config.rig}_{date_formatted}T{ext}"
 
             # Upload file to SharePoint if it hasn't been uploaded yet, use safe_upload_file function to handle retries
             today_date = datetime.strptime(datetime.now().strftime('%Y%m%d'), '%Y%m%d')

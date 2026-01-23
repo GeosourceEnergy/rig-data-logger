@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-
+from config import Config
 
 def file_formatted(file):
     headers = ["Time", "Crane Tilt Up", "Crane Tilt Down", "Crane Clamp Close", "Crane Clamp Open", "Rod Clamp Open", "Rod Clamp Close",
@@ -22,10 +22,7 @@ def file_formatted(file):
     df = pd.read_csv(file, delimiter=';', header=None)
     file = Path(file)
 
-    #folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\files_formatted" # for local testing
-    folder_path = r"/home/username/Desktop/files_formatted" # for raspberry pi
-
-    output_path = Path(folder_path) 
+    output_path = Path(Config.FORMATTED_DIR) 
     output_path.mkdir(parents=True, exist_ok=True)
     file_formatted = output_path/f"{file.stem}_formatted{file.suffix}"
 

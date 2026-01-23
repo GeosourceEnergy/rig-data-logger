@@ -10,6 +10,7 @@ from flask import jsonify
 
 from pathlib import Path
 from sred_utils import save_to_sred
+from config import Config
 
 main_bp = Blueprint('main', __name__)
 
@@ -22,9 +23,7 @@ def index():
 # Function that gets files from local folder
 @main_bp.route('/files/list', methods=['GET'])
 def get_files_from_folder():
-    folder_path = r"C:\Users\DannyLiang-Geosource\Downloads\rig_test_folder"
-    # folder_path = r"/home/admin/Downloads/rig_test_folder"
-    folder = Path(folder_path).expanduser().resolve()
+    folder = Path(Config.FORMATTED_DIR).expanduser().resolve()
     if not folder.exists():
         raise FileNotFoundError(f"Folder {folder} does not exist")
     if not folder.is_dir():
@@ -37,8 +36,8 @@ def get_files_from_folder():
             uploaded.append(file)
 
     print(uploaded)  # for debugging in console
-    # return jsonify([str(f) for f in uploaded]) # uncomment if you want to return the file objects in Flask using file list button
-    return (uploaded)
+    return jsonify([str(f) for f in uploaded]) # uncomment if you want to return the file objects in Flask using file list button
+    #return (uploaded)
 
 
 @main_bp.route('/save_report_sred', methods=['POST'])
