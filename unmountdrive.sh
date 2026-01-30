@@ -2,9 +2,8 @@
 
 set -e 
 
-USERNAME="${USERNAME:-datalogger_364}"
-USB_ID="${USB_ID:-D4C1-015C}" #USB volume ID from lsblk -f
-USB_MOUNT="/media/$USERNAME/$USB_ID"
+USERNAME="${USERNAME:-datalogger364}"
+USB_MOUNT="${USB_MOUNT:-/media/datalogger364/usb_formatted_data}" #note: same as formatted_dir
 
 echo "unmounting USB"
 

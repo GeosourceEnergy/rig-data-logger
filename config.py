@@ -19,30 +19,37 @@ SP_CLIENT_SECRET = os.getenv("SP_CLIENT_SECRET", "")
 SP_TENANT_ID     = os.getenv("SP_TENANT_ID", "")
 
 class Config:
-    #variable variables... aha get the joke haha...
+    #general
     USERNAME = "datalogger364"
     PROJECT_FOLDER = "pi-sharepoint-upload"  # name of project folder on Pi
-    USB_ID = "D4C1-015C" #changes every time USB is formatted 
-    USB_DEVICE = "/dev/sda1" #assumes stick is placed in bottom left Sss
+    RIG_NUMBER = 364
+    KEEP_DAYS = 30 #days to keep files on USB Stick before autodeleting 
 
-    rig = 364
+    #usb drive
+    USB_DEVICE = "/dev/sda1" #assumes stick is placed in bottom left
+    USB_MOUNT = f"/media/{USERNAME}/usb_formatted_data"
+    FORMATTED_DIR = USB_MOUNT
 
-    #paths must match mountdrive.sh
-    USB_MOUNT = f"/media/{USERNAME}/{USB_ID}"
-    RAW_DIR = f"{USB_MOUNT}/raw"
-    FORMATTED_DIR = f"{USB_MOUNT}/processed"
-    
+    #disk image file
+    RIG_MOUNT = f"/mnt/raw_data" # Mount rig_data_container.bin here
+    RAW_DIR = RIG_MOUNT # Raw CSV files will show up here!
+    RIG_CONTAINER_FILE = f"/home/{USERNAME}/{PROJECT_FOLDER}/rig_data_container.bin" #virtual disk image
+
     #shell script file paths
-    mount_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/mountdrive.sh"
-    unmount_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/unmountdrive.sh"
-
-    #NOTE: create your own paths/folders on PC for local testing 
+    mount_usb_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/mountdrive.sh"
+    unmount_usb_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/unmountdrive.sh"
+    
+    mount_image_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/mountimage.sh"
+    unmount_image_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/unmountimage.sh"
      
     @classmethod
     def export_to_env(cls):
         #exports config. to environment variables so shell scripts can access them
         os.environ["USERNAME"] = cls.USERNAME
+        os.environ["PROJECT_FOLDER"] = cls.PROJECT_FOLDER
         os.environ["USB_DEVICE"] = cls.USB_DEVICE
-        os.environ["USB_ID"] = cls.USB_ID
-        os.environ["RAW_DIR"] = cls.RAW_DIR
+        os.environ["USB_MOUNT"] = cls.USB_MOUNT
+        os.environ["RIG_CONTAINER_FILE"] = cls.RIG_CONTAINER_FILE
         os.environ["FORMATTED_DIR"] = cls.FORMATTED_DIR
+        os.environ["RIG_MOUNT"] = cls.RIG_MOUNT
+        os.environ["RAW_DIR"] = cls.RAW_DIR

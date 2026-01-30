@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 from config import Config
 
-def file_formatted(file):
+def format_raw_file(file):
     headers = ["Time", "Crane Tilt Up", "Crane Tilt Down", "Crane Clamp Close", "Crane Clamp Open", "Rod Clamp Open", "Rod Clamp Close",
                "Casing Clamp Close", "Casing Clamp Open", "Start-up", "Switch Aux. 2", "Switch Feeder Guide Open", "Switch Feeder Guide Close",
                "Switch Breakout 1 IN raw value", "Switch Breakout 1 OUT raw value", "Switch Breakout 4 IN raw value", "Switch Breakout 4 OUT raw value",

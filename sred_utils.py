@@ -12,7 +12,7 @@ from config import (
 )
 
 from pathlib import Path
-from process import file_formatted
+from process import format_raw_file
 from config import Config
 
 def delete_formatted_files():
@@ -22,10 +22,10 @@ def delete_formatted_files():
         raise FileNotFoundError(f"Folder {folder} does not exist")
     for file in folder.iterdir():
         file_date = datetime.strptime(file.stem.split('_')[0], '%Y%m%d')
-        if ("_formatted" in file.stem and (today_date - file_date).days > 30):
+        if ("_formatted" in file.stem and (today_date - file_date).days > Config.KEEP_DAYS):
             os.remove(file)
             print(f"File {file} deleted successfully")
-    print(f"Done deleting files older than 30 days")
+    print(f"Done deleting files older than {Config.KEEP_DAYS} days")
 
 
 def safe_upload_file(file, folder, new_name, max_retries=3, retry_delay=5):
@@ -49,7 +49,7 @@ def save_to_sred(files):
     Upload exactly the file the user uploaded to SharePoint.
     -> Reports/{rig}/
     '''
-    print(f"Saving files to SharePoint for rig {Config.rig}")
+    print(f"Saving files to SharePoint for rig {Config.RIG_NUMBER}")
 
     # Authenticating with Sharepoint site using app credentials
     ctx = ClientContext(SP_SITE_URL).with_credentials(
@@ -58,7 +58,7 @@ def save_to_sred(files):
 
     # Update folder and path in .env file after final file names are created
     folder = ctx.web.get_folder_by_server_relative_url(
-        f"{SP_DOC_LIBRARY}/Reports/{Config.rig}"
+        f"{SP_DOC_LIBRARY}/Reports/{Config.RIG_NUMBER}"
     )
 
     # Load existing files in the folder
@@ -79,12 +79,12 @@ def save_to_sred(files):
 
             # Format CSV file for Geometrics
             if (ext == ".csv"):
-                file = file_formatted(p)
+                file = format_raw_file(p)
             else:
                 print(f"File {p.name} is not a CSV file")
 
             # rename file to follow Danfoss convention for Geometrics processing
-            new_name = f"CS500-Novamac_{Config.rig}_{date_formatted}T{ext}"
+            new_name = f"CS500-Novamac_{Config.RIG_NUMBER}_{date_formatted}T{ext}"
 
             # Upload file to SharePoint if it hasn't been uploaded yet, use safe_upload_file function to handle retries
             today_date = datetime.strptime(datetime.now().strftime('%Y%m%d'), '%Y%m%d')
@@ -93,6 +93,8 @@ def save_to_sred(files):
                 attempt = safe_upload_file(file, folder, new_name)
                 if (attempt):
                     print(f"File {new_name} uploaded to SharePoint successfully")
+
+            
 
         except Exception as e:
             print(f"Error saving to SR&ED: {e}")
