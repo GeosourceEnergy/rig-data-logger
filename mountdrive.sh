@@ -5,9 +5,9 @@ set -e #exit on an error
 
 echo "Starting USB Mounting Script..."
 
-USERNAME="${USERNAME:-datalogger364}"
+USERNAME="${USERNAME:-datalogger2}"
 USB_DEVICE="${USB_DEVICE:-/dev/sda1}" #defaulting to bottom left USB port
-USB_MOUNT="${USB_MOUNT:-/media/datalogger364/usb_formatted_data}" #note: same as formatted_dir
+USB_MOUNT="${USB_MOUNT:-/media/datalogger2/usb_formatted_data}" #note: same as formatted_dir
 
 echo "Config Loads..."
 echo "  User: $USERNAME"

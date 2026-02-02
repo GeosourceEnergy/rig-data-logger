@@ -2,8 +2,8 @@
 
 set -e 
 
-USERNAME="${USERNAME:-datalogger364}"
-USB_MOUNT="${USB_MOUNT:-/media/datalogger364/usb_formatted_data}" #note: same as formatted_dir
+USERNAME="${USERNAME:-datalogger2}"
+USB_MOUNT="${USB_MOUNT:-/media/datalogger2/usb_formatted_data}" #note: same as formatted_dir
 
 echo "unmounting USB"
 

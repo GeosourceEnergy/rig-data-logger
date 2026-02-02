@@ -1,1 +1,1 @@
-00 19 * * * /bin/bash /home/datalogger364/pi-sharepoint-upload/job.sh >> /home/datalogger364/pi-sharepoint-upload/job.log 2>&1
+00 19 * * * /bin/bash /home/datalogger2/pi-sharepoint-upload/job.sh >> /home/datalogger2/pi-sharepoint-upload/job.log 2>&1

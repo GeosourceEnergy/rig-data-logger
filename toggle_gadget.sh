@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RIG_CONTAINER_FILE="${RIG_CONTAINER_FILE:-/home/datalogger364/pi-sharepoint-upload/rig_data_container.bin}"
+RIG_CONTAINER_FILE="${RIG_CONTAINER_FILE:-/home/datalogger2/pi-sharepoint-upload/rig_data_container.bin}"
 
 if [ "$1" = "stop" ]; then
     echo "turning off gadget mode"

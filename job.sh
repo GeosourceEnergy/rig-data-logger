@@ -1,6 +1,6 @@
 set -e
 
-USERNAME="${USERNAME:-datalogger364}"
+USERNAME="${USERNAME:-datalogger2}"
 PROJECT_FOLDER="${PROJECT_FOLDER:-pi-sharepoint-upload}"
 
 cd /home/$USERNAME/$PROJECT_FOLDER

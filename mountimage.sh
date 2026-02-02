@@ -3,10 +3,10 @@
 
 set -e #exit on an error
 
-USERNAME="${USERNAME:-datalogger364}"
+USERNAME="${USERNAME:-datalogger2}"
 PROJECT_FOLDER="${PROJECT_FOLDER:-pi-sharepoint-upload}"
 RIG_MOUNT="${RIG_MOUNT:-/mnt/raw_data}"
-RIG_CONTAINER_FILE="${RIG_CONTAINER_FILE:-/home/datalogger364/pi-sharepoint-upload/rig_data_container.bin}"
+RIG_CONTAINER_FILE="${RIG_CONTAINER_FILE:-/home/datalogger2/pi-sharepoint-upload/rig_data_container.bin}"
 
 echo "Config Loads..."
 echo "  User: $USERNAME"
