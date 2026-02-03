@@ -17,9 +17,6 @@ if mount | grep -q "$RIG_MOUNT"; then
     if sudo umount "$RIG_MOUNT"; then
         echo "successfully unmounted"
 
-        #remove mount directory 
-        sudo rmdir "$RIG_MOUNT" 2>/dev/null && echo "cleaned up!"
-
         /home/$USERNAME/$PROJECT_FOLDER/toggle_gadget.sh start
     else 
         echo "failed to unmount..."
