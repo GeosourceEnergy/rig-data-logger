@@ -80,11 +80,12 @@ def main():
 
         print("processing complete")
         
-        #delete files!
+        #delete files! CURRENTLY COMMENTED OUT
+        '''
         for file in files:
             file = Path(file)
             os.remove(file)
-
+        '''
     except Exception as e:
         print(f"error: {e}")
         import traceback
