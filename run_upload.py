@@ -80,6 +80,7 @@ def main():
 
         print("processing complete")
         
+        #delete files!
         for file in files:
             file = Path(file)
             os.remove(file)

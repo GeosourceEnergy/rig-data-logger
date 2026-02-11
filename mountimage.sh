@@ -40,7 +40,7 @@ sudo chown "$USERNAME:$USERNAME" "$RIG_MOUNT"
 #mounting device
 echo "Mounting image to $RIG_MOUNT"
 
-if sudo mount -o loop,uid=$USERNAME,gid=$USERNAME "$RIG_CONTAINER_FILE" "$RIG_MOUNT"; then
+if sudo mount -o loop,rw,uid=$USERNAME,gid=$USERNAME "$RIG_CONTAINER_FILE" "$RIG_MOUNT"; then
     echo "mount successful"
     # Show contents
     echo ""
