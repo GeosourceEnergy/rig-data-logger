@@ -16,8 +16,6 @@ if mount | grep -q "$RIG_MOUNT"; then
 
     if sudo umount "$RIG_MOUNT"; then
         echo "successfully unmounted"
-
-        /home/$USERNAME/$PROJECT_FOLDER/toggle_gadget.sh start
     else 
         echo "failed to unmount..."
         echo "check for any open files: lsof $RIG_MOUNT"

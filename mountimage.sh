@@ -14,9 +14,6 @@ echo "  Project Folder: $PROJECT_FOLDER"
 echo "  Rig Mount: $RIG_MOUNT"
 echo "  Container File: $RIG_CONTAINER_FILE"
 
-#turn off gadget mode
-/home/$USERNAME/$PROJECT_FOLDER/toggle_gadget.sh stop
-
 #verify that the device exists
 if [ ! -f "$RIG_CONTAINER_FILE" ]; then
     echo "ERROR: .bin container file not found. two possible fixes"
