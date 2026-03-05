@@ -15,14 +15,26 @@ from pathlib import Path
 from process import format_raw_file
 from config import Config
 
-def delete_formatted_files():
+def delete_old_files():
     today_date = datetime.strptime(datetime.now().strftime('%Y%m%d'), '%Y%m%d')
-    folder = Path(Config.FORMATTED_DIR)
-    if not folder.exists():
-        raise FileNotFoundError(f"Folder {folder} does not exist")
-    for file in folder.iterdir():
+    formatted_folder = Path(Config.FORMATTED_DIR)
+    raw_folder = Path(Config.RAW_DIR)
+
+    #formatted files
+    if not formatted_folder.exists():
+        raise FileNotFoundError(f"Folder {formatted_folder} does not exist")
+    for file in formatted_folder.iterdir():
         file_date = datetime.strptime(file.stem.split('_')[0], '%Y%m%d')
         if ("_formatted" in file.stem and (today_date - file_date).days > Config.KEEP_DAYS):
+            os.remove(file)
+            print(f"File {file} deleted successfully")
+
+    #raw files
+    if not raw_folder.exists():
+        raise FileNotFoundError(f"Folder {raw_folder} does not exist")
+    for file in raw_folder.iterdir():
+        file_date = datetime.strptime(file.stem.split('_')[0], '%Y%m%d')
+        if ((today_date - file_date).days > Config.KEEP_DAYS):
             os.remove(file)
             print(f"File {file} deleted successfully")
     print(f"Done deleting files older than {Config.KEEP_DAYS} days")
@@ -98,6 +110,6 @@ def save_to_sred(files):
 
         except Exception as e:
             print(f"Error saving to SR&ED: {e}")
-    delete_formatted_files()
+    delete_old_files()
 
     print("File upload to sharepoint complete")

@@ -42,9 +42,7 @@ def format_raw_file(file):
     df.insert(1, 'Date', '')
 
     df['Date'] = (
-        pd.to_datetime(df['Time'], utc=True, errors='coerce')
-        .dt.tz_convert(None)                    # drop timezone info
-        .sub(pd.Timedelta(hours=4))             # ⬅ shift 4 hours backward
+        pd.to_datetime(df['Time'], errors='coerce')
         .dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')  # re-format ISO
     )
     df.to_csv(file_formatted, sep=',', index=False, encoding='utf-8')

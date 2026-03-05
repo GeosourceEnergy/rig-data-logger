@@ -23,7 +23,7 @@ class Config:
     USERNAME = "datalogger2"
     PROJECT_FOLDER = "pi-sharepoint-upload"  # name of project folder on Pi
     RIG_NUMBER = 365
-    KEEP_DAYS = 30 #days to keep files on USB Stick before autodeleting 
+    KEEP_DAYS = 90 #days to keep files on USB Stick before autodeleting 
 
     #usb drive
     USB_DEVICE = "/dev/sda1" #assumes stick is placed in bottom left
