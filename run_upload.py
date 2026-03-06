@@ -79,11 +79,7 @@ def main():
         save_to_sred(files)
 
         print("processing complete")
-        
-        #delete raw files if older than 90 days 
-        for file in files:
-            file = Path(file)
-            os.remove(file)
+
     except Exception as e:
         print(f"error: {e}")
         import traceback

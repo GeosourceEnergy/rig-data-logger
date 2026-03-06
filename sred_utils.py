@@ -110,6 +110,7 @@ def save_to_sred(files):
 
         except Exception as e:
             print(f"Error saving to SR&ED: {e}")
+            
     delete_old_files()
 
     print("File upload to sharepoint complete")
