@@ -43,7 +43,8 @@ def format_raw_file(file):
 
     df['Date'] = (
         pd.to_datetime(df['Time'], errors='coerce')
-        .dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')  # re-format ISO
+        .dt.tz_localize('America/Toronto')
+        .dt.strftime('%Y-%m-%dT%H:%M:%S.000%z')  # %z gives actual offset e.g. -0500
     )
     df.to_csv(file_formatted, sep=',', index=False, encoding='utf-8')
     return file_formatted

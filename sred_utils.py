@@ -33,6 +33,8 @@ def delete_old_files():
     if not raw_folder.exists():
         raise FileNotFoundError(f"Folder {raw_folder} does not exist")
     for file in raw_folder.iterdir():
+        if file.suffix != '.csv':
+            continue
         file_date = datetime.strptime(file.stem.split('_')[0], '%Y%m%d')
         if ((today_date - file_date).days > Config.KEEP_DAYS):
             os.remove(file)
