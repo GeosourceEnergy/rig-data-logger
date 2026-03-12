@@ -47,7 +47,6 @@ def safe_upload_file(file, folder, new_name, max_retries=3, retry_delay=5):
         try:
             with open(file, 'rb') as file_obj:
                 folder.upload_file(new_name, file_obj).execute_query()
-            print(f"File {new_name} uploaded to SharePoint successfully")
             return True
         except Exception as e:
             print(f"Error uploading file {file}: {e}")
