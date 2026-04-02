@@ -1,5 +1,4 @@
 import os
-import gc
 from datetime import datetime
 import time
 
@@ -55,6 +54,17 @@ def safe_upload_file(file, folder, new_name, max_retries=3, retry_delay=5):
             else:
                 raise e
     return False
+
+def truncate_log():
+    log_path = f"/home/{Config.USERNAME}/{Config.PROJECT_FOLDER}/job.log"
+    marker = log_path + '.truncated'
+    if os.path.exists(marker):
+        last = datetime.fromtimestamp(os.path.getmtime(marker))
+        if (datetime.now() - last).days < Config.KEEP_DAYS//5:
+            return
+    open(log_path, 'w').close()
+    open(marker, 'w').close()
+    print(f"Log truncated at {datetime.now()}")
 
 
 def save_to_sred(files):
@@ -113,5 +123,6 @@ def save_to_sred(files):
             print(f"Error saving to SR&ED: {e}")
             
     delete_old_files()
+    truncate_log()
 
     print("File upload to sharepoint complete")
