@@ -5,7 +5,7 @@ if os.environ.get("FLASK_ENV") != "production":
     from dotenv import load_dotenv
     load_dotenv()
 
-BASE_DIR           = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR           = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE_FILE_PATH = os.path.join(
     BASE_DIR,
     'REPORT_TEMPLATE.xlsx'
@@ -36,11 +36,11 @@ class Config:
     RIG_CONTAINER_FILE = f"/home/{USERNAME}/{PROJECT_FOLDER}/rig_data_container.bin" #virtual disk image
 
     #shell script file paths
-    mount_usb_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/mountdrive.sh"
-    unmount_usb_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/unmountdrive.sh"
+    mount_usb_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/scripts/mountdrive.sh"
+    unmount_usb_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/scripts/unmountdrive.sh"
     
-    mount_image_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/mountimage.sh"
-    unmount_image_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/unmountimage.sh"
+    mount_image_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/scripts/mountimage.sh"
+    unmount_image_script = f"/home/{USERNAME}/{PROJECT_FOLDER}/scripts/unmountimage.sh"
      
     @classmethod
     def export_to_env(cls):

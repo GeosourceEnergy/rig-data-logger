@@ -1,0 +1,261 @@
+/* Aligned with tc-test-analyzer (Geohub-style shell) */
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f9f9f9;
+    background-image: url("https://www.transparenttextures.com/patterns/cubes.png");
+    color: #333;
+}
+
+.page-shell {
+    max-width: min(1400px, calc(100vw - 2rem));
+    margin: 0 auto;
+    padding: 24px 16px 40px;
+    box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+    .page-shell {
+        padding: 24px 24px 40px;
+    }
+}
+
+@media (min-width: 768px) {
+    .page-shell {
+        padding: 24px 32px 40px;
+    }
+}
+
+.container {
+    margin: 0 auto;
+    background: white;
+    padding: 20px 20px 28px;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+    max-width: min(900px, 100%);
+}
+
+@media (min-width: 640px) {
+    .container {
+        padding: 32px 32px 36px;
+    }
+}
+
+.page-header {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding-bottom: 24px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid #e7eef7;
+}
+
+.page-header-main {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    min-width: 0;
+}
+
+@media (min-width: 640px) {
+    .page-header-main {
+        flex-direction: row;
+        align-items: center;
+        gap: 20px;
+    }
+}
+
+.page-logo {
+    display: block;
+    height: 36px;
+    width: auto;
+    flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+    .page-logo {
+        height: 40px;
+    }
+}
+
+.page-title-block {
+    min-width: 0;
+    border-left: none;
+    padding-left: 0;
+}
+
+@media (min-width: 640px) {
+    .page-title-block {
+        border-left: 1px solid #e7eef7;
+        padding-left: 20px;
+    }
+}
+
+.page-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: #333;
+    line-height: 1.25;
+}
+
+@media (min-width: 640px) {
+    .page-title {
+        font-size: 24px;
+    }
+}
+
+.page-subtitle {
+    margin: 6px 0 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: #666;
+}
+
+h2 {
+    color: #007bff;
+    font-size: 18px;
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #555;
+}
+
+input[type="file"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+}
+
+input[type="file"]:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 5px rgba(10, 110, 255, 0.3);
+    outline: none;
+}
+
+.btn-row {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+@media (min-width: 480px) {
+    .btn-row {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+
+    .btn-row button {
+        flex: 1;
+        min-width: 200px;
+    }
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.18);
+}
+
+button.btn-secondary {
+    background-color: #6c757d;
+}
+
+button.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.hint {
+    color: #666;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 8px;
+}
+
+.hint code {
+    background: #f4f4f4;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 12px;
+}
+
+.flash-messages {
+    margin-bottom: 20px;
+}
+
+.flash {
+    padding: 14px 16px;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.flash.success {
+    background: #e8f5e9;
+    border-left: 4px solid #4caf50;
+    color: #1b5e20;
+}
+
+.flash.error {
+    background: #ffebee;
+    border-left: 4px solid #f44336;
+    color: #b71c1c;
+}
+
+.results-section {
+    margin-top: 24px;
+    padding: 18px 20px;
+    background: #e8f5e9;
+    border-radius: 5px;
+    border-left: 4px solid #4caf50;
+}
+
+.results-section h3 {
+    margin: 0 0 10px;
+    font-size: 16px;
+    color: #2e7d32;
+}
+
+.results-section a {
+    color: #1565c0;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.results-section a:hover {
+    text-decoration: underline;
+}
+
+.file-name {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 14px;
+    word-break: break-all;
+}
