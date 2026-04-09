@@ -3,7 +3,8 @@ set -e
 
 export PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-USERNAME="${USERNAME:-datalogger3}"
+RIG_NUMBER="${RIG_NUMBER:-999}"
+USERNAME="${USERNAME:-datalogger${RIG_NUMBER}}"
 PROJECT_FOLDER="${PROJECT_FOLDER:-pi-sharepoint-upload}"
 
 cd /home/$USERNAME/$PROJECT_FOLDER

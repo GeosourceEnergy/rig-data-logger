@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from flask import Flask, request, send_file, render_template_string, flash
 from werkzeug.utils import secure_filename
@@ -24,6 +24,21 @@ FORMATTED_DIR.mkdir(parents=True, exist_ok=True)
 
 # Override formatted output path for this standalone local app.
 Config.FORMATTED_DIR = str(FORMATTED_DIR)
+
+
+def _cleanup_temp_dirs(keep_days: int = 14) -> None:
+    cutoff = datetime.now() - timedelta(days=keep_days)
+    for folder in (UPLOAD_DIR, FORMATTED_DIR):
+        for file in folder.iterdir():
+            if not file.is_file():
+                continue
+            modified_at = datetime.fromtimestamp(file.stat().st_mtime)
+            if modified_at < cutoff:
+                try:
+                    file.unlink()
+                except OSError:
+                    # Best-effort cleanup; skip locked/in-use files.
+                    continue
 
 
 def _build_sred_name(input_path: Path) -> str:
@@ -141,6 +156,7 @@ UPLOAD_FORM = """
 def upload_and_process():
     output_name = None
     if request.method == "POST":
+        _cleanup_temp_dirs()
         raw_file = request.files.get("raw_file")
         if not raw_file or not raw_file.filename:
             flash("Choose a CSV file to upload.", "error")

@@ -2,10 +2,11 @@
 
 set -e 
 
-USERNAME="${USERNAME:-datalogger3}"
+RIG_NUMBER="${RIG_NUMBER:-999}"
+USERNAME="${USERNAME:-datalogger${RIG_NUMBER}}"
 PROJECT_FOLDER="${PROJECT_FOLDER:-pi-sharepoint-upload}"
 RIG_MOUNT="${RIG_MOUNT:-/mnt/raw_data}"
-RIG_CONTAINER_FILE="${RIG_CONTAINER_FILE:-/home/datalogger3/pi-sharepoint-upload/rig_data_container.bin}"
+RIG_CONTAINER_FILE="${RIG_CONTAINER_FILE:-/home/${USERNAME}/${PROJECT_FOLDER}/rig_data_container.bin}"
 
 echo "unmounting image"
 

@@ -20,9 +20,9 @@ SP_TENANT_ID     = os.getenv("SP_TENANT_ID", "")
 
 class Config:
     #general
-    USERNAME = "datalogger3"
+    RIG_NUMBER = 999
+    USERNAME = f"datalogger{RIG_NUMBER}"
     PROJECT_FOLDER = "pi-sharepoint-upload"  # name of project folder on Pi
-    RIG_NUMBER = 364
     KEEP_DAYS = 90 #days to keep files on USB Stick before autodeleting 
 
     #usb drive
@@ -46,6 +46,7 @@ class Config:
     def export_to_env(cls):
         #exports config. to environment variables so shell scripts can access them
         os.environ["USERNAME"] = cls.USERNAME
+        os.environ["RIG_NUMBER"] = str(cls.RIG_NUMBER)
         os.environ["PROJECT_FOLDER"] = cls.PROJECT_FOLDER
         os.environ["USB_DEVICE"] = cls.USB_DEVICE
         os.environ["USB_MOUNT"] = cls.USB_MOUNT
