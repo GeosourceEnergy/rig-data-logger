@@ -2,9 +2,7 @@
 
 set -e 
 
-RIG_NUMBER="${RIG_NUMBER:-999}"
-USERNAME="${USERNAME:-datalogger${RIG_NUMBER}}"
-PROJECT_FOLDER="${PROJECT_FOLDER:-pi-sharepoint-upload}"
+USERNAME="${USERNAME:-dataloggerX}"
 RIG_MOUNT="${RIG_MOUNT:-/mnt/raw_data}"
 RIG_CONTAINER_FILE="${RIG_CONTAINER_FILE:-/home/${USERNAME}/${PROJECT_FOLDER}/rig_data_container.bin}"
 

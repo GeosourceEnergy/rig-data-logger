@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-RIG_NUMBER="${RIG_NUMBER:-999}"
-USERNAME="${USERNAME:-datalogger${RIG_NUMBER}}"
-PROJECT_FOLDER="${PROJECT_FOLDER:-pi-sharepoint-upload}"
+USERNAME="${USERNAME:-dataloggerX}"
+PROJECT_FOLDER="${PROJECT_FOLDER:-rig-data-logger}"
 cd "/home/${USERNAME}/${PROJECT_FOLDER}"
 
 python3 -m venv venv

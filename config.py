@@ -21,8 +21,8 @@ SP_TENANT_ID     = os.getenv("SP_TENANT_ID", "")
 class Config:
     #general
     RIG_NUMBER = 999
-    USERNAME = f"datalogger{RIG_NUMBER}"
-    PROJECT_FOLDER = "pi-sharepoint-upload"  # name of project folder on Pi
+    USERNAME = f"dataloggerX"
+    PROJECT_FOLDER = "rig-data-logger"  # name of project folder on Pi
     KEEP_DAYS = 90 #days to keep files on USB Stick before autodeleting 
 
     #usb drive
