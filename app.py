@@ -2,8 +2,12 @@ import os
 import secrets
 from pathlib import Path
 from datetime import datetime
+import base64
+import hashlib
+import hmac
+import json
 
-from flask import Flask, request, send_file, render_template_string, flash, redirect, after_this_request
+from flask import Flask, request, send_file, render_template_string, flash, redirect, after_this_request, session
 from werkzeug.utils import secure_filename
 
 from office365.runtime.auth.client_credential import ClientCredential
@@ -19,8 +23,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-local-only-change-me")
 
 GEOHUB_URL = os.environ.get("GEOHUB_URL", "").rstrip("/")
 GEOHUB_SSO_SHARED_SECRET = os.environ.get("GEOHUB_SSO_SHARED_SECRET", "")
-NEXT_PUBLIC_GEOMETRICS_URL = os.environ.get("NEXT_PUBLIC_GEOMETRICS_URL", "").rstrip("/")
-AUTH_METHOD = os.environ.get("AUTH_METHOD", "").strip().lower()
+NEXT_PUBLIC_DATALOGGER_URL = os.environ.get("NEXT_PUBLIC_DATALOGGER_URL", "").rstrip("/")
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = PROJECT_ROOT / "tmp_test_raw"
@@ -32,49 +35,117 @@ FORMATTED_DIR.mkdir(parents=True, exist_ok=True)
 Config.FORMATTED_DIR = str(FORMATTED_DIR)
 
 
-def _get_auth_method() -> str:
-    if AUTH_METHOD == "geohub":
-        return "geohub"
-    return ""
-
-
 def _redirect_target() -> str:
-    return NEXT_PUBLIC_GEOMETRICS_URL or GEOHUB_URL or "/"
+    return NEXT_PUBLIC_DATALOGGER_URL or GEOHUB_URL or "/"
 
 
-def _request_is_authorized() -> bool:
-    method = _get_auth_method()
-    if method == "geohub":
-        if not GEOHUB_SSO_SHARED_SECRET:
-            return False
+def _b64url_decode(input_str: str) -> bytes:
+    s = input_str.replace("-", "+").replace("_", "/")
+    padding = "=" * ((4 - (len(s) % 4)) % 4)
+    return base64.b64decode(s + padding)
 
-        provided_header = (request.headers.get("X-Geohub-SSO-Shared-Secret") or "").strip()
-        auth_header = (request.headers.get("Authorization") or "").strip()
-        token = ""
-        if auth_header.lower().startswith("bearer "):
-            token = auth_header[7:].strip()
 
-        if provided_header and secrets.compare_digest(provided_header, GEOHUB_SSO_SHARED_SECRET):
-            return True
-        if token and secrets.compare_digest(token, GEOHUB_SSO_SHARED_SECRET):
-            return True
+def _verify_geohub_sso_token(token: str) -> dict:
+    """
+    Token format: <base64url(payload-json)>.<base64url(hmac_sha256(payloadB64, secret))>
+    Shared secret: GEOHUB_SSO_SHARED_SECRET
+    """
+    if not GEOHUB_SSO_SHARED_SECRET:
+        raise ValueError("GEOHUB_SSO_SHARED_SECRET is not configured")
 
-    return False
+    try:
+        payload_b64, sig_b64 = token.split(".", 1)
+    except ValueError:
+        raise ValueError("Invalid token format")
+
+    expected_sig = hmac.new(
+        GEOHUB_SSO_SHARED_SECRET.encode("utf-8"),
+        payload_b64.encode("utf-8"),
+        hashlib.sha256,
+    ).digest()
+    actual_sig = _b64url_decode(sig_b64)
+    if not hmac.compare_digest(expected_sig, actual_sig):
+        raise ValueError("Invalid token signature")
+
+    payload_raw = _b64url_decode(payload_b64).decode("utf-8")
+    payload = json.loads(payload_raw)
+
+    now = int(datetime.utcnow().timestamp())
+    exp = int(payload.get("exp", 0) or 0)
+    if exp and now > exp:
+        raise ValueError("Token expired")
+
+    aud_expected = os.getenv("DATALOGGER_SSO_AUDIENCE", "datalogger")
+    if payload.get("aud") and payload.get("aud") != aud_expected:
+        raise ValueError("Invalid token audience")
+
+    iss_expected = os.getenv("DATALOGGER_SSO_ISSUER", "geohub")
+    if payload.get("iss") and payload.get("iss") != iss_expected:
+        raise ValueError("Invalid token issuer")
+
+    if not payload.get("sub"):
+        raise ValueError("Token missing subject")
+
+    return payload
+
+
+def _geohub_sso_start_url(next_path: str) -> str | None:
+    explicit = os.getenv("GEOHUB_DATALOGGER_SSO_START_URL", "").strip()
+    if explicit:
+        return f"{explicit}?next={next_path}"
+    if GEOHUB_URL:
+        return f"{GEOHUB_URL}/api/sso/datalogger?next={next_path}"
+    return None
 
 
 @app.before_request
 def _enforce_auth():
     if request.path.startswith("/static/"):
         return None
-
-    # This app only runs when explicitly configured behind Geohub auth.
-    if _get_auth_method() != "geohub":
-        return redirect(_redirect_target(), code=302)
-
-    if _request_is_authorized():
+    if request.path in {"/auth/sso/callback", "/auth/logout", "/healthz"}:
         return None
 
+    if session.get("user"):
+        return None
+
+    next_path = request.full_path if request.query_string else request.path
+    start = _geohub_sso_start_url(next_path)
+    if start:
+        return redirect(start, code=302)
     return redirect(_redirect_target(), code=302)
+
+
+@app.get("/healthz")
+def healthz():
+    return "ok", 200
+
+
+@app.get("/auth/sso/callback")
+def sso_callback():
+    token = request.args.get("token", "")
+    next_path = request.args.get("next", "/")
+    if not next_path.startswith("/"):
+        next_path = "/"
+    try:
+        claims = _verify_geohub_sso_token(token)
+    except Exception as e:
+        return f"SSO failed: {str(e)}", 401
+
+    session["user"] = {
+        "sub": claims.get("sub"),
+        "email": claims.get("email"),
+    }
+
+    base = NEXT_PUBLIC_DATALOGGER_URL.rstrip("/")
+    if base:
+        return redirect(f"{base}{next_path}", code=302)
+    return redirect(next_path, code=302)
+
+
+@app.get("/auth/logout")
+def logout():
+    session.clear()
+    return redirect("/", code=302)
 
 
 def _safe_unlink(path: Path) -> None:
