@@ -1,8 +1,9 @@
 import os
+import secrets
 from pathlib import Path
 from datetime import datetime, timedelta
 
-from flask import Flask, request, send_file, render_template_string, flash
+from flask import Flask, request, send_file, render_template_string, flash, redirect
 from werkzeug.utils import secure_filename
 
 from office365.runtime.auth.client_credential import ClientCredential
@@ -16,6 +17,11 @@ from src.sred_utils import safe_upload_file
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-local-only-change-me")
 
+GEOHUB_URL = os.environ.get("GEOHUB_URL", "").rstrip("/")
+GEOHUB_SSO_SHARED_SECRET = os.environ.get("GEOHUB_SSO_SHARED_SECRET", "")
+NEXT_PUBLIC_DATALOGGER_URL = os.environ.get("NEXT_PUBLIC_DATALOGGER_URL", "").rstrip("/")
+AUTH_METHOD = os.environ.get("AUTH_METHOD", "").strip().lower()
+
 PROJECT_ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = PROJECT_ROOT / "tmp_test_raw"
 FORMATTED_DIR = PROJECT_ROOT / "tmp_test_formatted"
@@ -24,6 +30,51 @@ FORMATTED_DIR.mkdir(parents=True, exist_ok=True)
 
 # Override formatted output path for this standalone local app.
 Config.FORMATTED_DIR = str(FORMATTED_DIR)
+
+
+def _get_auth_method() -> str:
+    if AUTH_METHOD == "geohub":
+        return "geohub"
+    return ""
+
+
+def _redirect_target() -> str:
+    return NEXT_PUBLIC_DATALOGGER_URL or GEOHUB_URL or "/"
+
+
+def _request_is_authorized() -> bool:
+    method = _get_auth_method()
+    if method == "geohub":
+        if not GEOHUB_SSO_SHARED_SECRET:
+            return False
+
+        provided_header = (request.headers.get("X-Geohub-SSO-Shared-Secret") or "").strip()
+        auth_header = (request.headers.get("Authorization") or "").strip()
+        token = ""
+        if auth_header.lower().startswith("bearer "):
+            token = auth_header[7:].strip()
+
+        if provided_header and secrets.compare_digest(provided_header, GEOHUB_SSO_SHARED_SECRET):
+            return True
+        if token and secrets.compare_digest(token, GEOHUB_SSO_SHARED_SECRET):
+            return True
+
+    return False
+
+
+@app.before_request
+def _enforce_auth():
+    if request.path.startswith("/static/"):
+        return None
+
+    # This app only runs when explicitly configured behind Geohub auth.
+    if _get_auth_method() != "geohub":
+        return redirect(_redirect_target(), code=302)
+
+    if _request_is_authorized():
+        return None
+
+    return redirect(_redirect_target(), code=302)
 
 
 def _cleanup_temp_dirs(keep_days: int = 14) -> None:
@@ -41,19 +92,28 @@ def _cleanup_temp_dirs(keep_days: int = 14) -> None:
                     continue
 
 
-def _build_sred_name(input_path: Path) -> str:
+def _resolve_rig_number(raw_value: str | None) -> int:
+    value = (raw_value or "").strip()
+    if not value:
+        return int(Config.RIG_NUMBER)
+    if not value.isdigit():
+        raise ValueError("Rig number must contain digits only.")
+    return int(value)
+
+
+def _build_sred_name(input_path: Path, rig_number: int) -> str:
     date_token = input_path.stem.split("_")[0]
     date_obj = datetime.strptime(date_token, "%Y%m%d")
     date_formatted = date_obj.strftime("%Y-%m-%d")
     ext = input_path.suffix.lower()
-    return f"CS500-Novamac_{Config.RIG_NUMBER}_{date_formatted}T{ext}"
+    return f"CS500-Novamac_{rig_number}_{date_formatted}T{ext}"
 
 
 def _sharepoint_credentials_ok() -> bool:
     return bool(SP_SITE_URL and SP_DOC_LIBRARY and SP_CLIENT_ID and SP_CLIENT_SECRET)
 
 
-def _upload_formatted_to_sharepoint(input_path: Path):
+def _upload_formatted_to_sharepoint(input_path: Path, rig_number: int):
     """
     Same naming and upload path as save_to_sred(), without mounts or delete/truncate.
     Uploads for any valid YYYYMMDD in the filename (Flask-only; production cron still uses save_to_sred's today rule).
@@ -74,7 +134,7 @@ def _upload_formatted_to_sharepoint(input_path: Path):
 
     try:
         processed_path = Path(format_raw_file(p))
-        new_name = f"CS500-Novamac_{Config.RIG_NUMBER}_{date_formatted}T{ext}"
+        new_name = f"CS500-Novamac_{rig_number}_{date_formatted}T{ext}"
         final_path = processed_path.with_name(new_name)
         os.replace(processed_path, final_path)
 
@@ -82,7 +142,7 @@ def _upload_formatted_to_sharepoint(input_path: Path):
             ClientCredential(SP_CLIENT_ID, SP_CLIENT_SECRET)
         )
         folder = ctx.web.get_folder_by_server_relative_url(
-            f"{SP_DOC_LIBRARY}/Data Logs/{Config.RIG_NUMBER}"
+            f"{SP_DOC_LIBRARY}/Data Logs/{rig_number}"
         )
         ctx.load(folder, ["Files"]).execute_query()
 
@@ -132,6 +192,11 @@ UPLOAD_FORM = """
           <input type="file" id="raw_file" name="raw_file" accept=".csv" required>
           <p class="hint">Filename must start with <code>YYYYMMDD</code> (e.g. <code>20260309.csv</code>). SharePoint upload accepts <strong>any</strong> valid date; the scheduled Pi job still uploads only same-day files.</p>
         </div>
+        <div class="form-group">
+          <label for="rig_number">Rig number (for SharePoint path and filename)</label>
+          <input type="text" id="rig_number" name="rig_number" value="{{ rig_number }}" inputmode="numeric" pattern="[0-9]+">
+          <p class="hint">Optional for download. For SharePoint uploads, enter the target rig number (digits only).</p>
+        </div>
         <div class="btn-row">
           <button type="submit" name="action" value="download">Process and download</button>
           <button type="submit" name="action" value="sharepoint" class="btn-secondary">Process and upload to SharePoint</button>
@@ -155,6 +220,7 @@ UPLOAD_FORM = """
 @app.route("/", methods=["GET", "POST"])
 def upload_and_process():
     output_name = None
+    rig_value = str(Config.RIG_NUMBER)
     if request.method == "POST":
         _cleanup_temp_dirs()
         raw_file = request.files.get("raw_file")
@@ -171,19 +237,25 @@ def upload_and_process():
         raw_file.save(input_path)
 
         action = request.form.get("action") or "download"
+        rig_value = (request.form.get("rig_number") or "").strip() or str(Config.RIG_NUMBER)
+        try:
+            rig_number = _resolve_rig_number(rig_value)
+        except ValueError as exc:
+            flash(str(exc), "error")
+            return render_template_string(UPLOAD_FORM, output_name=None, rig_number=rig_value), 400
 
         if action == "sharepoint":
-            ok, msg = _upload_formatted_to_sharepoint(input_path)
+            ok, msg = _upload_formatted_to_sharepoint(input_path, rig_number)
             flash(msg, "success" if ok else "error")
-            output_name = _build_sred_name(input_path) if ok else None
-            return render_template_string(UPLOAD_FORM, output_name=output_name)
+            output_name = _build_sred_name(input_path, rig_number) if ok else None
+            return render_template_string(UPLOAD_FORM, output_name=output_name, rig_number=rig_value)
 
         processed_path = Path(format_raw_file(input_path))
-        output_name = _build_sred_name(input_path)
+        output_name = _build_sred_name(input_path, rig_number)
         final_path = processed_path.with_name(output_name)
         os.replace(processed_path, final_path)
 
-    return render_template_string(UPLOAD_FORM, output_name=output_name)
+    return render_template_string(UPLOAD_FORM, output_name=output_name, rig_number=rig_value)
 
 
 @app.route("/download/<path:filename>", methods=["GET"])
