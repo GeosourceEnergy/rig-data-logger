@@ -1,9 +1,9 @@
 import os
 import secrets
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime
 
-from flask import Flask, request, send_file, render_template_string, flash, redirect
+from flask import Flask, request, send_file, render_template_string, flash, redirect, after_this_request
 from werkzeug.utils import secure_filename
 
 from office365.runtime.auth.client_credential import ClientCredential
@@ -19,7 +19,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-local-only-change-me")
 
 GEOHUB_URL = os.environ.get("GEOHUB_URL", "").rstrip("/")
 GEOHUB_SSO_SHARED_SECRET = os.environ.get("GEOHUB_SSO_SHARED_SECRET", "")
-NEXT_PUBLIC_DATALOGGER_URL = os.environ.get("NEXT_PUBLIC_DATALOGGER_URL", "").rstrip("/")
+NEXT_PUBLIC_GEOMETRICS_URL = os.environ.get("NEXT_PUBLIC_GEOMETRICS_URL", "").rstrip("/")
 AUTH_METHOD = os.environ.get("AUTH_METHOD", "").strip().lower()
 
 PROJECT_ROOT = Path(__file__).resolve().parent
@@ -39,7 +39,7 @@ def _get_auth_method() -> str:
 
 
 def _redirect_target() -> str:
-    return NEXT_PUBLIC_DATALOGGER_URL or GEOHUB_URL or "/"
+    return NEXT_PUBLIC_GEOMETRICS_URL or GEOHUB_URL or "/"
 
 
 def _request_is_authorized() -> bool:
@@ -77,19 +77,12 @@ def _enforce_auth():
     return redirect(_redirect_target(), code=302)
 
 
-def _cleanup_temp_dirs(keep_days: int = 14) -> None:
-    cutoff = datetime.now() - timedelta(days=keep_days)
-    for folder in (UPLOAD_DIR, FORMATTED_DIR):
-        for file in folder.iterdir():
-            if not file.is_file():
-                continue
-            modified_at = datetime.fromtimestamp(file.stat().st_mtime)
-            if modified_at < cutoff:
-                try:
-                    file.unlink()
-                except OSError:
-                    # Best-effort cleanup; skip locked/in-use files.
-                    continue
+def _safe_unlink(path: Path) -> None:
+    try:
+        if path.exists():
+            path.unlink()
+    except OSError:
+        pass
 
 
 def _resolve_rig_number(raw_value: str | None) -> int:
@@ -132,6 +125,8 @@ def _upload_formatted_to_sharepoint(input_path: Path, rig_number: int):
     if ext != ".csv":
         return False, "Only .csv files are supported for upload."
 
+    processed_path: Path | None = None
+    final_path: Path | None = None
     try:
         processed_path = Path(format_raw_file(p))
         new_name = f"CS500-Novamac_{rig_number}_{date_formatted}T{ext}"
@@ -151,6 +146,12 @@ def _upload_formatted_to_sharepoint(input_path: Path, rig_number: int):
         return False, "Upload failed (see server console for details)."
     except Exception as exc:
         return False, f"SharePoint error: {exc}"
+    finally:
+        _safe_unlink(input_path)
+        if processed_path is not None:
+            _safe_unlink(processed_path)
+        if final_path is not None:
+            _safe_unlink(final_path)
 
 
 UPLOAD_FORM = """
@@ -203,13 +204,6 @@ UPLOAD_FORM = """
         </div>
       </form>
 
-      {% if output_name %}
-      <div class="results-section">
-        <h3>Ready to download</h3>
-        <p class="file-name">{{ output_name }}</p>
-        <p><a href="{{ url_for('download_processed', filename=output_name) }}">Download processed file</a></p>
-      </div>
-      {% endif %}
     </div>
   </div>
 </body>
@@ -219,19 +213,17 @@ UPLOAD_FORM = """
 
 @app.route("/", methods=["GET", "POST"])
 def upload_and_process():
-    output_name = None
     rig_value = str(Config.RIG_NUMBER)
     if request.method == "POST":
-        _cleanup_temp_dirs()
         raw_file = request.files.get("raw_file")
         if not raw_file or not raw_file.filename:
             flash("Choose a CSV file to upload.", "error")
-            return render_template_string(UPLOAD_FORM, output_name=None), 400
+            return render_template_string(UPLOAD_FORM, rig_number=rig_value), 400
 
         safe_name = secure_filename(raw_file.filename)
         if not safe_name.lower().endswith(".csv"):
             flash("Only .csv files are supported.", "error")
-            return render_template_string(UPLOAD_FORM, output_name=None), 400
+            return render_template_string(UPLOAD_FORM, rig_number=rig_value), 400
 
         input_path = UPLOAD_DIR / safe_name
         raw_file.save(input_path)
@@ -242,29 +234,29 @@ def upload_and_process():
             rig_number = _resolve_rig_number(rig_value)
         except ValueError as exc:
             flash(str(exc), "error")
-            return render_template_string(UPLOAD_FORM, output_name=None, rig_number=rig_value), 400
+            _safe_unlink(input_path)
+            return render_template_string(UPLOAD_FORM, rig_number=rig_value), 400
 
         if action == "sharepoint":
             ok, msg = _upload_formatted_to_sharepoint(input_path, rig_number)
             flash(msg, "success" if ok else "error")
-            output_name = _build_sred_name(input_path, rig_number) if ok else None
-            return render_template_string(UPLOAD_FORM, output_name=output_name, rig_number=rig_value)
+            return render_template_string(UPLOAD_FORM, rig_number=rig_value)
 
         processed_path = Path(format_raw_file(input_path))
         output_name = _build_sred_name(input_path, rig_number)
         final_path = processed_path.with_name(output_name)
         os.replace(processed_path, final_path)
 
-    return render_template_string(UPLOAD_FORM, output_name=output_name, rig_number=rig_value)
+        @after_this_request
+        def _cleanup_download_response(response):
+            _safe_unlink(input_path)
+            _safe_unlink(processed_path)
+            _safe_unlink(final_path)
+            return response
 
+        return send_file(final_path, as_attachment=True, download_name=output_name)
 
-@app.route("/download/<path:filename>", methods=["GET"])
-def download_processed(filename):
-    safe_name = secure_filename(filename)
-    target = FORMATTED_DIR / safe_name
-    if not target.exists():
-        return "Processed file not found.", 404
-    return send_file(target, as_attachment=True)
+    return render_template_string(UPLOAD_FORM, rig_number=rig_value)
 
 
 if __name__ == "__main__":
