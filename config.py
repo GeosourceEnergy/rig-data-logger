@@ -20,10 +20,10 @@ SP_TENANT_ID     = os.getenv("SP_TENANT_ID", "")
 
 class Config:
     #general
-    RIG_NUMBER = 999
+    RIG_NUMBER = 999 
     USERNAME = f"dataloggerX"
-    PROJECT_FOLDER = "rig-data-logger"  # name of project folder on Pi
-    KEEP_DAYS = 90 #days to keep files on USB Stick before autodeleting 
+    KEEP_DAYS = 90 #days before deletion
+    PROJECT_FOLDER = "rig-data-logger"
 
     #usb drive
     USB_DEVICE = "/dev/sda1" #assumes stick is placed in bottom left

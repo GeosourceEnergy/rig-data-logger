@@ -24,6 +24,7 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-local-only-change-me")
 GEOHUB_URL = os.environ.get("GEOHUB_URL", "").rstrip("/")
 GEOHUB_SSO_SHARED_SECRET = os.environ.get("GEOHUB_SSO_SHARED_SECRET", "")
 NEXT_PUBLIC_DATALOGGER_URL = os.environ.get("NEXT_PUBLIC_DATALOGGER_URL", "").rstrip("/")
+AUTH_METHOD = os.environ.get("AUTH_METHOD", "").strip().lower()
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = PROJECT_ROOT / "tmp_test_raw"
@@ -37,6 +38,13 @@ Config.FORMATTED_DIR = str(FORMATTED_DIR)
 
 def _redirect_target() -> str:
     return NEXT_PUBLIC_DATALOGGER_URL or GEOHUB_URL or "/"
+
+
+def _is_local_request() -> bool:
+    remote = (request.remote_addr or "").strip()
+    forwarded_for = (request.headers.get("X-Forwarded-For") or "").split(",")[0].strip()
+    candidate = forwarded_for or remote
+    return candidate in {"127.0.0.1", "::1", "localhost"}
 
 
 def _b64url_decode(input_str: str) -> bytes:
@@ -104,6 +112,12 @@ def _enforce_auth():
         return None
     if request.path in {"/auth/sso/callback", "/auth/logout", "/healthz"}:
         return None
+
+    # Non-geohub mode is local-only.
+    if AUTH_METHOD != "geohub":
+        if _is_local_request():
+            return None
+        return "Local mode only. Use http://127.0.0.1", 403
 
     if session.get("user"):
         return None
